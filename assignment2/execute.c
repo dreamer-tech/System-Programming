@@ -30,7 +30,7 @@ int execute_commands(struct cmd **cmds, int cmd_num) {
             r++;
         }
 
-        if ((l != 0 && (cmds[l - 1]->next & OP_AND) && return_status != 0) || 
+        if ((l != 0 && (cmds[l - 1]->next & OP_AND) && return_status != 0) ||
             (l != 0 && (cmds[l - 1]->next & OP_OR) && return_status == 0)) {
             l = r + 1;
             continue;
@@ -58,12 +58,10 @@ int execute_commands(struct cmd **cmds, int cmd_num) {
 
             if (pid == 0) {
                 if (i != r) {
-                    close(1);
-                    dup(pipes[(i - l) * 2 + 1]);
+                    dup2(pipes[(i - l) * 2 + 1], 1);
                 }
                 if (i != l) {
-                    close(0);
-                    dup(pipes[(i - l - 1) * 2]);
+                    dup2(pipes[(i - l - 1) * 2], 0);
                 }
                 for (int j = 0; j < len - 1; j++) {
                     close(pipes[j * 2]);
@@ -71,20 +69,17 @@ int execute_commands(struct cmd **cmds, int cmd_num) {
                 }
                 if (cmds[i]->in != NULL) {
                     int fdin = open(cmds[i]->in, O_RDONLY);
-                    close(0);
-                    dup(fdin);
+                    dup2(fdin, 0);
                     close(fdin);
                 }
                 if (cmds[i]->out != NULL) {
                     int fdout = open(cmds[i]->out, O_CREAT | O_WRONLY | O_TRUNC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-                    close(1);
-                    dup(fdout);
+                    dup2(fdout, 1);
                     close(fdout);
                 }
                 if (cmds[i]->append != NULL) {
                     int fdout = open(cmds[i]->append, O_CREAT | O_WRONLY | O_APPEND);
-                    close(1);
-                    dup(fdout);
+                    dup2(fdout, 1);
                     close(fdout);
                 }
                 if (strcmp(cmds[i]->name, "true") == 0) {
@@ -117,6 +112,7 @@ int execute_commands(struct cmd **cmds, int cmd_num) {
                 waitpid(pids[i], &return_status, 0);
             }
         }
+        free(pipes);
         free(pids);
 
         l = r + 1;
@@ -125,6 +121,21 @@ int execute_commands(struct cmd **cmds, int cmd_num) {
     if (to_stop) {
         exit(return_status);
     }
+
+    for (int i = 0; i < cmd_num; i++) {
+        free((char*)cmds[i]->name);
+        for (int j = 0; j < cmds[i]->argc; j++)
+            free((char*)cmds[i]->argv[j]);
+        free(cmds[i]->argv);
+        if (cmds[i]->in)
+            free((char*)cmds[i]->in);
+        if (cmds[i]->out)
+            free((char*)cmds[i]->out);
+        if (cmds[i]->append)
+            free((char*)cmds[i]->append);
+        free(cmds[i]);
+    }
+    free(cmds);
 
     return 0;
 }

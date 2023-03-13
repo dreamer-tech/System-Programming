@@ -8,8 +8,7 @@
 void remove_slash(char **str) {
     char *s = *str;
     int sz = strlen(s);
-    char *t = (char*)malloc((sz + 1) * sizeof(char));
-    strcpy(t, s);
+    char *t = strdup(s);
 
     int ptr = 0;
     for (int i = 0; i < sz; i++) {
@@ -28,8 +27,7 @@ void remove_slash(char **str) {
     }
     t[ptr] = '\0';
     free(s);
-    s = (char*)malloc((ptr + 1) * sizeof(char));
-    strcpy(s, t);
+    s = strdup(t);
     free(t);
     *str = s;
 }
@@ -56,8 +54,7 @@ void remove_slash2(char **str) {
     }
     t[ptr] = '\0';
     free(s);
-    s = (char*)malloc((ptr + 1) * sizeof(char));
-    strcpy(s, t);
+    s = strdup(t);
     free(t);
     *str = s;
 }
@@ -93,6 +90,7 @@ struct cmd **parse_command(char *str, int *cmd_num) {
 
             if (cur != ' ' && cur != '\n') {
                 if (first_char && cur == '#') {
+                    free(argv);
                     break;
                 }
                 first_char = false;
@@ -141,9 +139,9 @@ struct cmd **parse_command(char *str, int *cmd_num) {
                 }
             }
 
-            if (((i + 1 < size && cur == '&' && str[i + 1] == '&') || 
-                 (i + 1 < size && cur == '|' && str[i + 1] == '|') || 
-                  cur == '|') && quote == 0) {
+            if (((i + 1 < size && cur == '&' && str[i + 1] == '&') ||
+                 (i + 1 < size && cur == '|' && str[i + 1] == '|') ||
+                 cur == '|') && quote == 0) {
                 if (i + 1 < size && cur == '&' && str[i + 1] == '&') {
                     next |= OP_AND;
                     i++;
@@ -158,6 +156,7 @@ struct cmd **parse_command(char *str, int *cmd_num) {
                 cmds[ncmds] = (struct cmd*)malloc(sizeof(struct cmd));
                 cmds[ncmds]->name = name;
                 cmds[ncmds]->argv = (const char**)argv;
+                cmds[ncmds]->argv[cnt] = NULL;
                 cmds[ncmds]->argc = cnt;
                 cmds[ncmds]->in = in;
                 cmds[ncmds]->out = out;
@@ -343,11 +342,12 @@ struct cmd **parse_command(char *str, int *cmd_num) {
     }
 
     free(str);
-    
+
     if (name) {
         cmds[ncmds] = (struct cmd*)malloc(sizeof(struct cmd));
         cmds[ncmds]->name = name;
         cmds[ncmds]->argv = (const char**)argv;
+        cmds[ncmds]->argv[cnt] = NULL;
         cmds[ncmds]->argc = cnt;
         cmds[ncmds]->in = in;
         cmds[ncmds]->out = out;
