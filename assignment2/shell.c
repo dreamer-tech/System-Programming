@@ -7,6 +7,7 @@
 #include "parser.h"
 #include "execute.h"
 
+
 void run_shell() {
     char *str = NULL;
     size_t size;
@@ -21,9 +22,10 @@ void run_shell() {
         }
 
         int cmd_num;
-        struct cmd **c = parse_command(str, &cmd_num);
+        struct cmd **cmds = parse_command(str, &cmd_num);
 
-        execute_commands(c, cmd_num);
+        execute_commands(cmds, cmd_num);
+        flush_commands(cmds, cmd_num);
 
         str = NULL;
 

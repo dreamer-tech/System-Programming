@@ -68,7 +68,7 @@ struct cmd **parse_command(char *str, int *cmd_num) {
     struct cmd **cmds = (struct cmd**)malloc(CNT_CMD * sizeof(struct cmd*));
     int ncmds = 0;
 
-    int cnt = 0;
+    int cnt = 0, max_cnt = CNT_ARG;
     char *name = NULL;
     char **argv = (char**)malloc(CNT_ARG * sizeof(char*));
     char *in = NULL;
@@ -90,7 +90,6 @@ struct cmd **parse_command(char *str, int *cmd_num) {
 
             if (cur != ' ' && cur != '\n') {
                 if (first_char && cur == '#') {
-                    free(argv);
                     break;
                 }
                 first_char = false;
@@ -127,6 +126,13 @@ struct cmd **parse_command(char *str, int *cmd_num) {
                             strncpy(name, str + begin, end - begin + 1);
                             name[end - begin + 1] = '\0';
                             remove_slash(&name);
+                        }
+                        if (cnt == max_cnt - 1) {
+                            max_cnt *= 2;
+                            char **argv_new = (char**)malloc(max_cnt * sizeof(char*));
+                            memcpy(argv_new, argv, cnt * sizeof(char*));
+                            free(argv);
+                            argv = argv_new;
                         }
                         argv[cnt] = (char*)malloc((end - begin + 2) * sizeof(char*));
                         strncpy(argv[cnt], str + begin, end - begin + 1);
@@ -233,6 +239,13 @@ struct cmd **parse_command(char *str, int *cmd_num) {
                             name[end - begin + 1] = '\0';
                             remove_slash2(&name);
                         }
+                        if (cnt == max_cnt - 1) {
+                            max_cnt *= 2;
+                            char **argv_new = (char**)malloc(max_cnt * sizeof(char*));
+                            memcpy(argv_new, argv, cnt * sizeof(char*));
+                            free(argv);
+                            argv = argv_new;
+                        }
                         argv[cnt] = (char*)malloc((end - begin + 2) * sizeof(char*));
                         strncpy(argv[cnt], str + begin, end - begin + 1);
                         argv[cnt][end - begin + 1] = '\0';
@@ -282,6 +295,13 @@ struct cmd **parse_command(char *str, int *cmd_num) {
                             strncpy(name, str + begin, end - begin + 1);
                             name[end - begin + 1] = '\0';
                             remove_slash2(&name);
+                        }
+                        if (cnt == max_cnt - 1) {
+                            max_cnt *= 2;
+                            char **argv_new = (char**)malloc(max_cnt * sizeof(char*));
+                            memcpy(argv_new, argv, cnt * sizeof(char*));
+                            free(argv);
+                            argv = argv_new;
                         }
                         argv[cnt] = (char*)malloc((end - begin + 2) * sizeof(char*));
                         strncpy(argv[cnt], str + begin, end - begin + 1);
@@ -355,6 +375,9 @@ struct cmd **parse_command(char *str, int *cmd_num) {
         cmds[ncmds]->next = next;
         cmds[ncmds]->back = back;
         ncmds++;
+    }
+    else {
+        free(argv);
     }
     cmds[ncmds] = NULL;
     *cmd_num = ncmds;

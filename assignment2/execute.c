@@ -7,6 +7,23 @@
 
 #include "execute.h"
 
+void flush_commands(struct cmd **cmds, int cmd_num) {
+    for (int i = 0; i < cmd_num; i++) {
+        free((char*)cmds[i]->name);
+        for (int j = 0; j < cmds[i]->argc; j++)
+            free((char*)cmds[i]->argv[j]);
+        free(cmds[i]->argv);
+        if (cmds[i]->in)
+            free((char*)cmds[i]->in);
+        if (cmds[i]->out)
+            free((char*)cmds[i]->out);
+        if (cmds[i]->append)
+            free((char*)cmds[i]->append);
+        free(cmds[i]);
+    }
+    free(cmds);
+}
+
 int execute_commands(struct cmd **cmds, int cmd_num) {
     if (cmd_num == 0) {
         return 0;
@@ -30,13 +47,28 @@ int execute_commands(struct cmd **cmds, int cmd_num) {
             r++;
         }
 
-        if ((l != 0 && (cmds[l - 1]->next & OP_AND) && return_status != 0) ||
+        if ((l != 0 && (cmds[l - 1]->next & OP_AND) && return_status != 0) || 
             (l != 0 && (cmds[l - 1]->next & OP_OR) && return_status == 0)) {
             l = r + 1;
             continue;
         }
 
         int len = r - l + 1;
+
+        if (len == 1 && strcmp(cmds[0]->name, "exit") == 0) {
+            if (cmds[0]->argc == 1) {
+                int exit_code = 0;
+                flush_commands(cmds, cmd_num);
+                exit(exit_code);
+            }
+            if (cmds[0]->argc == 2) {
+                int exit_code = atoi(cmds[0]->argv[1]);
+                flush_commands(cmds, cmd_num);
+                exit(exit_code);
+            }
+        }
+
+
         int *pipes = (int*)malloc((len - 1) * 2 * sizeof(int));
         for (int i = 0; i < len - 1; i++) {
             pipe(&pipes[i * 2]);
@@ -107,7 +139,7 @@ int execute_commands(struct cmd **cmds, int cmd_num) {
             close(pipes[i * 2]);
             close(pipes[i * 2 + 1]);
         }
-        for (int i = 0; i < cmd_num; i++) {
+        for (int i = 0; i < len; i++) {
             if (pids[i] != 0) {
                 waitpid(pids[i], &return_status, 0);
             }
@@ -121,21 +153,6 @@ int execute_commands(struct cmd **cmds, int cmd_num) {
     if (to_stop) {
         exit(return_status);
     }
-
-    for (int i = 0; i < cmd_num; i++) {
-        free((char*)cmds[i]->name);
-        for (int j = 0; j < cmds[i]->argc; j++)
-            free((char*)cmds[i]->argv[j]);
-        free(cmds[i]->argv);
-        if (cmds[i]->in)
-            free((char*)cmds[i]->in);
-        if (cmds[i]->out)
-            free((char*)cmds[i]->out);
-        if (cmds[i]->append)
-            free((char*)cmds[i]->append);
-        free(cmds[i]);
-    }
-    free(cmds);
 
     return 0;
 }
