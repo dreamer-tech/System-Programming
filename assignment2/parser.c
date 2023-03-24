@@ -145,9 +145,9 @@ struct cmd **parse_command(char *str, int *cmd_num) {
                 }
             }
 
-            if (((i + 1 < size && cur == '&' && str[i + 1] == '&') ||
-                 (i + 1 < size && cur == '|' && str[i + 1] == '|') ||
-                 cur == '|') && quote == 0) {
+            if (((i + 1 < size && cur == '&' && str[i + 1] == '&') || 
+                 (i + 1 < size && cur == '|' && str[i + 1] == '|') || 
+                  cur == '|') && quote == 0) {
                 if (i + 1 < size && cur == '&' && str[i + 1] == '&') {
                     next |= OP_AND;
                     i++;
@@ -362,7 +362,7 @@ struct cmd **parse_command(char *str, int *cmd_num) {
     }
 
     free(str);
-
+    
     if (name) {
         cmds[ncmds] = (struct cmd*)malloc(sizeof(struct cmd));
         cmds[ncmds]->name = name;

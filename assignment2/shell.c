@@ -20,7 +20,7 @@ void run_shell() {
             free(str);
             break;
         }
-
+        
         int cmd_num;
         struct cmd **cmds = parse_command(str, &cmd_num);
 
